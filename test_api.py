@@ -56,13 +56,13 @@ if __name__ == '__main__':
         print('T07 Pass')
         
         # Test 8
-        r = requests.put('http://localhost:8000/pedidos/1/status', json={'forma_pagamento':'MOCK'}, headers=headers)
+        r = requests.post('http://localhost:8000/pagamentos/', json={'pedido_id': 1, 'forma_pagamento':'MOCK'}, headers=headers)
         assert r.status_code == 200, f"Failed T08: {r.status_code} {r.text}"
         print('T08 Pass')
         
         # Test 9: To test 9 we need a new CRIADO order since order 1 is now PAGO
         r = requests.post('http://localhost:8000/pedidos/', json={'canalPedido':'APP','itens':[{'produto_id':1,'quantidade':1}]}, headers=headers)
-        r = requests.put('http://localhost:8000/pedidos/2/status', json={'forma_pagamento':'CARTAO_INVALIDO'}, headers=headers)
+        r = requests.post('http://localhost:8000/pagamentos/', json={'pedido_id': 2, 'forma_pagamento':'CARTAO_INVALIDO'}, headers=headers)
         assert r.status_code == 400, f"Failed T09: {r.status_code} {r.text}"
         print('T09 Pass')
         

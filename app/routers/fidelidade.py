@@ -11,6 +11,11 @@ def obter_saldo(db: Session = Depends(database.get_db), current_user: models.Usu
     # Mocking saldo
     return {"usuario_id": current_user.id, "saldo_pontos": 150}
 
+@router.post("/registrar")
+def registrar_pontos(pontos: int, db: Session = Depends(database.get_db), current_user: models.Usuario = Depends(auth.get_current_user)):
+    logger.info(f"Usuário {current_user.id} REGISTROU {pontos} pontos de fidelidade.")
+    return {"detail": "Pontos registrados com sucesso.", "saldo_total": 150 + pontos}
+
 @router.post("/resgatar")
 def resgatar_pontos(pontos: int, db: Session = Depends(database.get_db), current_user: models.Usuario = Depends(auth.get_current_user)):
     if pontos > 150:

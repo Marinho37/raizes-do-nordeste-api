@@ -143,31 +143,43 @@ Abaixo estão os endpoints documentados conforme exigido no roteiro. A documenta
 - *Parâmetros:* Body JSON `{"canalPedido": "APP", "itens": [{"produto_id": 1, "quantidade": 2}]}`
 - *Response (201):* JSON do Pedido criado contendo os detalhes inseridos e `total`.
 
-**4. Atualizar Status (Pagamento Mock) (`PUT /pedidos/{id}/status`)**
-- *Propósito:* Avançar fluxo do pedido para PAGO ou COZINHA.
+**4. Atualizar Status do Pedido (`PATCH /pedidos/{id}/status`)**
+- *Propósito:* Atualizar o status do pedido (ex: de PAGO para COZINHA).
 - *Permissões:* Requer JWT (Bearer).
-- *Parâmetros:* Path `id`. Body JSON `{"forma_pagamento": "MOCK"}`
+- *Parâmetros:* Path `id`. Body JSON `{"forma_pagamento": "..."}`
+- *Response (200):* `{"detail": "Status atualizado.", "novo_status": "COZINHA"}`
+
+**5. Processar Pagamento Mock (`POST /pagamentos/`)**
+- *Propósito:* Simular o gateway de pagamento externo e alterar status para PAGO.
+- *Permissões:* Requer JWT (Bearer).
+- *Parâmetros:* Body JSON `{"pedido_id": 1, "forma_pagamento": "MOCK"}`
 - *Response (200):* `{"detail": "Pagamento simulado com sucesso via Gateway MOCK.", "novo_status": "PAGO"}`
 
-**5. Consultar Saldo Fidelidade (`GET /fidelidade/saldo`)**
+**6. Consultar Saldo Fidelidade (`GET /fidelidade/saldo`)**
 - *Propósito:* Checar quantos pontos o usuário possui.
 - *Permissões:* Requer JWT.
 - *Parâmetros:* Nenhum (usa token).
 - *Response (200):* `{"usuario_id": 1, "saldo_pontos": 150}`
 
-**6. Resgatar Pontos Fidelidade (`POST /fidelidade/resgatar`)**
+**7. Registrar Pontos Fidelidade (`POST /fidelidade/registrar`)**
+- *Propósito:* Acumular pontos na conta do cliente ao efetuar compras.
+- *Permissões:* Requer JWT.
+- *Parâmetros:* Query param `pontos`.
+- *Response (200):* `{"detail": "Pontos registrados com sucesso.", "saldo_total": 200}`
+
+**8. Resgatar Pontos Fidelidade (`POST /fidelidade/resgatar`)**
 - *Propósito:* Trocar pontos por benefícios.
 - *Permissões:* Requer JWT.
 - *Parâmetros:* Query param `pontos`.
 - *Response (200):* `{"detail": "Pontos resgatados...", "saldo_restante": 50}`
 
-**7. Consultar Estoque Unidade (`GET /estoque/{unidadeId}`)**
+**9. Consultar Estoque Unidade (`GET /estoque/{unidadeId}`)**
 - *Propósito:* Visualizar saldos de produtos da unidade.
 - *Permissões:* Público (ou Logado).
 - *Parâmetros:* Path param `unidadeId`.
 - *Response (200):* `[{"produto_id": 1, "quantidade": 50}]`
 
-**8. Movimentar Estoque (`PATCH /estoque/movimentar`)**
+**10. Movimentar Estoque (`PATCH /estoque/movimentar`)**
 - *Propósito:* Realizar entrada/saída de itens.
 - *Permissões:* Apenas GERENTE/ADMIN (validação no JWT).
 - *Parâmetros:* Body JSON `{"produto_id": 1, "unidade_id": 1, "quantidade": 10}`
@@ -198,8 +210,8 @@ Os testes da aplicação seguem a estrutura abaixo e podem ser executados atrav�
 | **T03** | `POST /pedidos/` | Usuário logado | Sem campo `canalPedido` | `422 Unprocessable` + JSON Erro | `Pedidos / Falta Canal` |
 | **T04** | `POST /pedidos/` | Usuário logado, Produto 1 ativo | `canalPedido`=APP e item id=1 | `201 Created` + JSON do Pedido | `Pedidos / Criar Pedido` |
 | **T05** | `POST /pedidos/` | Usuário logado | Produto = 999 (Inexistente) | `404 Not Found` + Erro padrão | `Pedidos / Produto Inexistente` |
-| **T06** | `PUT /pedidos/1/status` | Pedido 1 como CRIADO | `{forma_pagamento: "MOCK"}` | `200` + Status alterado p/ PAGO | `Pedidos / Pagar MOCK Ok` |
-| **T07** | `PUT /pedidos/2/status` | Pedido 2 como CRIADO | `{forma_pagamento: "FALHA"}` | `400 Bad Request` + Pag. Recusado | `Pedidos / Pagar MOCK Recusado` |
+| **T06** | `POST /pagamentos/` | Pedido 1 como CRIADO | `{pedido_id: 1, forma_pagamento: "MOCK"}` | `200` + Status alterado p/ PAGO | `Pagamentos / Pagar MOCK Ok` |
+| **T07** | `POST /pagamentos/` | Pedido 2 como CRIADO | `{pedido_id: 2, forma_pagamento: "FALHA"}` | `400 Bad Request` + Pag. Recusado | `Pagamentos / Pagar MOCK Recusado` |
 | **T08** | `PATCH /estoque/movimentar`| Logado c/ perfil CLIENTE | JSON Movimentação de estoque | `403 Forbidden` (Sem permissão) | `Estoque / Acesso Negado` |
 | **T09** | `GET /fidelidade/saldo` | Logado c/ qualquer perfil| Endpoint acionado com Token | `200` + Pontos retornados (150) | `Fidelidade / Consultar Pontos` |
 | **T10** | `POST /fidelidade/resgatar` | Logado, possui 150 pts | Query param `pontos=200` | `400 Bad Request` + Insuficiente | `Fidelidade / Saldo Insuficiente` |

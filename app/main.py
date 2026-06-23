@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from datetime import datetime
 from .database import engine, Base
-from .routers import usuarios, produtos, pedidos, fidelidade, unidades, estoque
+from .routers import usuarios, produtos, pedidos, pagamentos, fidelidade, unidades, estoque
 
 Base.metadata.create_all(bind=engine)
 
@@ -41,6 +41,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(usuarios.router)
 app.include_router(produtos.router)
 app.include_router(pedidos.router)
+app.include_router(pagamentos.router)
 app.include_router(fidelidade.router)
 app.include_router(estoque.router)
 app.include_router(unidades.router)

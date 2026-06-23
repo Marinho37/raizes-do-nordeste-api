@@ -77,7 +77,7 @@ def listar_pedidos(
         
     return query.all()
 
-@router.put("/{pedido_id}/status")
+@router.patch("/{pedido_id}/status")
 def atualizar_status(
     pedido_id: int,
     status_data: schemas.AtualizaStatusPedido,
@@ -88,19 +88,13 @@ def atualizar_status(
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado.")
     
-    # Se é mock pagamento
-    if pedido.status == models.StatusPedidoEnum.CRIADO:
-        if status_data.forma_pagamento.upper() == "MOCK":
-            pedido.status = models.StatusPedidoEnum.PAGO
-            db.commit()
-            logger.info(f"Usuário {current_user.id} ALTEROU o status do pedido {pedido.id} para PAGO (Mock Gateway).")
-            return {"detail": "Pagamento simulado com sucesso via Gateway MOCK.", "novo_status": pedido.status}
-        else:
-            logger.info(f"Usuário {current_user.id} TENTOU pagar pedido {pedido.id} com forma inválida.")
-            raise HTTPException(status_code=400, detail="Forma de pagamento inválida. Pagamento recusado.")
-            
-    # Para as outras atualizações
-    pedido.status = models.StatusPedidoEnum.COZINHA
+    # Atualiza status livremente para simplificação do MVP
+    novo_status = status_data.forma_pagamento.upper()
+    try:
+        pedido.status = models.StatusPedidoEnum(novo_status)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Status inválido.")
+        
     db.commit()
-    logger.info(f"Usuário {current_user.id} ALTEROU o status do pedido {pedido.id} para COZINHA.")
+    logger.info(f"Usuário {current_user.id} ALTEROU o status do pedido {pedido.id} para {pedido.status}.")
     return {"detail": "Status atualizado.", "novo_status": pedido.status}
