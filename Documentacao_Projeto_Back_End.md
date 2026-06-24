@@ -1,8 +1,8 @@
 # Projeto Multidisciplinar - Trilha Back-End
 ## Rede "Raízes do Nordeste"
 
-**Aluno:** [Wesley Guimarães Marinho / RU 4736850]
-**Polo de Apoio:** CENTRO UNIVERSITÁRIO INTERNACIONAL UNINTER
+**Aluno:** Wesley Guimarães Marinho / RU 4736850
+**Polo de Apoio:** Polo Araraquara - SP
 PROJETO MULTIDISCIPLINAR DE ANÁLISE E DESENVOLVIMENTO DE SISTEMAS
 TRILHA: BACK-END
 **Professor:** Prof. Me. Luciane Yanase Kanashiro
@@ -33,10 +33,10 @@ A ideia foi construir uma arquitetura funcional em Python, permitindo a gestão 
 ### Requisitos Funcionais (RF)
 - **RF01:** Cadastro e Autenticação de usuários, diferenciando os perfis em `ADMIN`, `GERENTE` e `CLIENTE`.
 - **RF02:** Visualização de cardápio, permitindo a listagem e consulta detalhada de produtos.
-- **RF03:** Realização de pedidos multicanal. A API deve exigir e registrar o `canalPedido` (`APP`, `TOTEM`, `BALCAO`, `WEB`, `PICKUP`).
+- **RF03:** Multicanalidade – O campo `canalPedido` é obrigatório para garantir a rastreabilidade operacional e auditoria entre os diferentes pontos de venda (App, Totem, Balcão, Web, Retirada), conforme regras de negócio da rede.
 - **RF04:** Atualização de status de pedido (CRIADO -> PAGO -> COZINHA -> ENTREGUE / CANCELADO).
 - **RF05:** Mock de pagamento. O sistema deve validar a forma de pagamento externa, alterando o status caso seja "MOCK" ou simulando recusa.
-- **RF06:** Controle de estoque com restrição de vendas, decrementando saldo ou bloqueando caso não haja produto.
+- **RF06:** Controle de Estoque por Unidade – Bloqueio de vendas caso o estoque da unidade selecionada seja insuficiente, evitando inconsistências no atendimento durante horários de pico.
 - **RF07:** Fidelização (base: acumular pontos).
 
 ### Requisitos Não Funcionais (RNF)
@@ -138,9 +138,12 @@ Abaixo estão os endpoints documentados conforme exigido no roteiro. A documenta
 - *Response (200):* `[{"id": 1, "nome": "Tapioca", "preco": 10.0}]`
 
 **3. Criar Pedido (`POST /pedidos/`)**
-- *Propósito:* Registrar pedido com itens e canal.
-- *Permissões:* Requer JWT (Bearer).
-- *Parâmetros:* Body JSON `{"canalPedido": "APP", "itens": [{"produto_id": 1, "quantidade": 2}]}`
+- *Propósito:* Registrar uma nova requisição de compra associada a uma unidade e validar os itens.
+- *Permissões:* Requer JWT (Perfil: CLIENTE).
+- *Payload (Request):* JSON contendo unidadeId, itens (lista de IDs e quantidades) e formaPagamento.
+- *Regras de Negócio e Erros:*
+  - O campo `canalPedido` é um ENUM obrigatório. Se ausente ou inválido, retorna `422 Unprocessable Entity`.
+  - O sistema realiza o double-check do estoque na unidade antes de fechar o pedido. Caso não haja saldo suficiente para qualquer item, a operação é abortada retornando `409 Conflict`.
 - *Response (201):* JSON do Pedido criado contendo os detalhes inseridos e `total`.
 
 **4. Atualizar Status do Pedido (`PATCH /pedidos/{id}/status`)**
@@ -185,8 +188,18 @@ Abaixo estão os endpoints documentados conforme exigido no roteiro. A documenta
 - *Parâmetros:* Body JSON `{"produto_id": 1, "unidade_id": 1, "quantidade": 10}`
 - *Response (200):* `{"detail": "Movimentação registrada com sucesso.", "novo_saldo": 60}`
 
+**11. Listar Pedidos (`GET /pedidos/`)**
+- *Propósito:* Consultar o histórico de pedidos realizados na rede para fins de auditoria e relatórios.
+- *Permissões:* Requer JWT (Perfis: ADMIN, GERENTE).
+- *Parâmetros de Busca:* Query param opcional `canalPedido` (ex: `?canalPedido=TOTEM`) para filtrar e segmentar as vendas por canal de origem.
+- *Response (200):* Array JSON contendo a listagem dos pedidos filtrados e seus respectivos status.
+
 ## 5. LGPD, Privacidade e Segurança no Back-End
 Para atender aos requisitos de segurança e LGPD propostos pelo estudo de caso, procurei manter o armazenamento apenas do que é essencial para o fluxo funcionar. 
+
+**Conformidade com a LGPD e Armazenamento**
+- *Base Legal:* O tratamento de dados pessoais (Nome, E-mail, CPF) é fundamentado no Consentimento do Titular (Art. 7º, I, LGPD) coletado no momento do cadastro através de aceite explícito dos Termos de Uso.
+- *Persistência do Consentimento:* O aceite é registrado na tabela USUARIO através do campo booleano `consentimento_lgpd` (armazenando True e o timestamp da operação), garantindo a rastreabilidade da autorização.
 
 - As senhas dos usuários nunca são salvas abertamente (usei a biblioteca nativa `bcrypt` para salvar apenas o hash no banco).
 - Apliquei um esquema de autenticação com tokens JWT.
@@ -215,11 +228,14 @@ Os testes da aplicação seguem a estrutura abaixo e podem ser executados atrav�
 | **T08** | `PATCH /estoque/movimentar`| Logado c/ perfil CLIENTE | JSON Movimentação de estoque | `403 Forbidden` (Sem permissão) | `Estoque / Acesso Negado` |
 | **T09** | `GET /fidelidade/saldo` | Logado c/ qualquer perfil| Endpoint acionado com Token | `200` + Pontos retornados (150) | `Fidelidade / Consultar Pontos` |
 | **T10** | `POST /fidelidade/resgatar` | Logado, possui 150 pts | Query param `pontos=200` | `400 Bad Request` + Insuficiente | `Fidelidade / Saldo Insuficiente` |
+| **T11** | `POST /pedidos/` | Estoque da unidade é 0 | Envio de pedido com quantidade superior ao estoque atual da unidade | `409 Conflict` + Mensagem de estoque insuficiente | `Pedidos / Estoque Insuficiente` |
 
 ## 8. Conclusão
 Desenvolver este projeto foi um ótimo desafio para colocar em prática o que foi ensinado na disciplina. Consegui montar uma API com FastAPI que não apenas atende aos requisitos do estudo de caso, como o uso do `canalPedido` e a simulação de pagamento via gateway (Mock), mas que também funciona de verdade integrado a um banco de dados relacional. 
 
 Optei por usar o SQLite para deixar o projeto mais fácil de ser executado e testado por quem for corrigir, sem perder a complexidade da estrutura de tabelas (incluindo FKs de Unidade, etc) usando o SQLAlchemy. Acredito que o código ficou organizado, bem documentado através do Swagger automático e que essa solução se sairia muito bem em uma demonstração para vagas na área.
+
+A execução deste projeto consolidou os conceitos de persistência e arquitetura de camadas explorados ao longo do curso de Análise e Desenvolvimento de Sistemas da UNINTER, simulando com precisão os desafios de entrega encontrados no mercado de trabalho.
 
 ## 9. Referências
 - Documentação do FastAPI. Disponível em: https://fastapi.tiangolo.com/
