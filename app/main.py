@@ -3,8 +3,9 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from datetime import datetime
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
 from .routers import usuarios, produtos, pedidos, pagamentos, fidelidade, unidades, estoque
+from . import models, auth
 
 Base.metadata.create_all(bind=engine)
 
@@ -13,6 +14,34 @@ app = FastAPI(
     description="API Back-End para o Projeto Multidisciplinar",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        # Seed automático para facilitar testes e avaliações do tutor
+        unidade_exist = db.query(models.Unidade).first()
+        if not unidade_exist:
+            unidade = models.Unidade(nome="Matriz Recife", endereco="Av. Boa Viagem, 100")
+            db.add(unidade)
+            db.commit()
+            db.refresh(unidade)
+            
+            produto = models.Produto(nome="Tapioca", descricao="Tapioca de queijo", preco=15.0)
+            db.add(produto)
+            db.commit()
+            db.refresh(produto)
+            
+            estoque = models.Estoque(produto_id=produto.id, unidade_id=unidade.id, quantidade=100)
+            db.add(estoque)
+            
+            senha_hash = auth.get_password_hash("123456")
+            admin = models.Usuario(nome="Admin", email="admin@raizes.com", senha_hash=senha_hash, perfil=models.PerfilEnum.ADMIN)
+            db.add(admin)
+            
+            db.commit()
+    finally:
+        db.close()
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):

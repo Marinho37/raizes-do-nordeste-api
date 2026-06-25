@@ -19,6 +19,11 @@ def criar_pedido(
     if not pedido_in.canalPedido:
         raise HTTPException(status_code=422, detail="canalPedido é obrigatório.")
         
+    # Validar unidade
+    unidade = db.query(models.Unidade).filter(models.Unidade.id == pedido_in.unidade_id).first()
+    if not unidade:
+        raise HTTPException(status_code=404, detail="Unidade não encontrada.")
+        
     total_pedido = 0.0
     itens_obj = []
     
@@ -28,6 +33,15 @@ def criar_pedido(
             raise HTTPException(status_code=404, detail=f"Produto com ID {item.produto_id} não encontrado ou inativo.")
         
         # Simulação simples de estoque (na prática, abateria aqui)
+        estoque = db.query(models.Estoque).filter(
+            models.Estoque.produto_id == item.produto_id,
+            models.Estoque.unidade_id == pedido_in.unidade_id
+        ).first()
+        
+        if not estoque or estoque.quantidade < item.quantidade:
+            raise HTTPException(status_code=409, detail=f"Estoque insuficiente para o produto ID {item.produto_id} na unidade selecionada.")
+            
+        estoque.quantidade -= item.quantidade
         
         preco_item = produto.preco
         total_pedido += preco_item * item.quantidade
@@ -40,6 +54,7 @@ def criar_pedido(
 
     novo_pedido = models.Pedido(
         usuario_id=current_user.id,
+        unidade_id=pedido_in.unidade_id,
         canal_pedido=pedido_in.canalPedido,
         total=total_pedido,
         status=models.StatusPedidoEnum.CRIADO
