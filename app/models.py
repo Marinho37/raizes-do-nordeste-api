@@ -57,10 +57,12 @@ class Pedido(Base):
     __tablename__ = "pedidos"
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    unidade_id = Column(Integer, ForeignKey("unidades.id"))
     canal_pedido = Column(SQLEnum(CanalPedidoEnum))
     status = Column(SQLEnum(StatusPedidoEnum), default=StatusPedidoEnum.CRIADO)
     total = Column(Float, default=0.0)
     itens = relationship("ItemPedido", back_populates="pedido")
+    unidade = relationship("Unidade")
 
 class ItemPedido(Base):
     __tablename__ = "itens_pedido"
