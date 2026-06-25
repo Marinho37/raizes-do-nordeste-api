@@ -51,12 +51,14 @@ class ItemPedidoResponse(BaseModel):
         from_attributes = True
 
 class PedidoCreate(BaseModel):
+    unidade_id: int
     canalPedido: CanalPedidoEnum
     itens: List[ItemPedidoCreate]
 
 class PedidoResponse(BaseModel):
     id: int
     usuario_id: int
+    unidade_id: int
     canal_pedido: CanalPedidoEnum
     status: StatusPedidoEnum
     total: float
