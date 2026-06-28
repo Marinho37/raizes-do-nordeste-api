@@ -1,6 +1,6 @@
 # Raízes do Nordeste - API Back-End
 
-Este projeto foi desenvolvido como parte da disciplina Projeto Multidisciplinar do curso de Análise e Desenvolvimento de Sistemas.
+API REST desenvolvida como Projeto Multidisciplinar da disciplina de Projeto Multidisciplinar – Trilha Back-End do curso superior de Análise e Desenvolvimento de Sistemas.
 
 ## 1. Nome do Projeto e Objetivo
 Este repositório contém a implementação da API de Back-End para o Projeto Multidisciplinar "Raízes do Nordeste". O objetivo é prover uma API REST para gerenciamento de pedidos, produtos, estoque, controle de pagamentos e programa de fidelidade de uma rede de tapiocarias.
@@ -8,7 +8,7 @@ Este repositório contém a implementação da API de Back-End para o Projeto Mu
 ## 2. Tecnologias Utilizadas
 - **Linguagem:** Python 3.9+
 - **Framework Web:** FastAPI
-- **Banco de Dados:** SQLite
+- **Banco de Dados:** SQLite (utilizado como banco de dados da aplicação)
 - **ORM:** SQLAlchemy
 - **Validação de Dados:** Pydantic
 - **Autenticação:** JWT (JSON Web Token) e Bcrypt (Hash de Senha)
@@ -41,7 +41,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 
 ## 6. Como iniciar a API
-O banco SQLite é criado automaticamente na primeira execução da aplicação.
+O banco SQLite (raizes_nordeste.db) é criado automaticamente na primeira execução da aplicação.
 
 Inicie o servidor de desenvolvimento utilizando o módulo Uvicorn:
 ```bash
@@ -67,24 +67,7 @@ Opção 2: **Coleção Postman**
 3. Execute o `POST /auth/login` (Login Válido) primeiro.
 4. Copie o `access_token` e coloque na variável `token` do Postman para liberar as demais rotas restritas.
 
-## 9. Evidências
-
-- Repositório GitHub:
-https://github.com/Marinho37/raizes-do-nordeste-api
-
-- Swagger:
-http://localhost:8000/docs
-
-- ReDoc:
-http://localhost:8000/redoc
-
-- Coleção Postman:
-Raizes_do_Nordeste_Postman_Collection.json
-
-- Script de testes:
-test_api.py
-
-## 10. Estrutura do Projeto
+## 9. Estrutura do Projeto
 ```text
 raizes_nordeste_api/
 ├── app/
@@ -101,7 +84,7 @@ raizes_nordeste_api/
 └── README.md            # Este arquivo
 ```
 
-## 11. Fluxo Principal Implementado
+## 10. Fluxo Principal Implementado
 
 Fluxo A — Pedido → Pagamento Mock → Atualização de Status
 
@@ -111,3 +94,37 @@ Fluxo A — Pedido → Pagamento Mock → Atualização de Status
 - Processamento do pagamento Mock
 - Atualização do status do pedido
 - Persistência em banco SQLite
+
+---
+
+# Evidências
+
+## Repositório Git
+
+https://github.com/Marinho37/raizes-do-nordeste-api
+
+## Documentação Swagger
+
+Após iniciar a API:
+
+http://localhost:8000/docs
+
+## ReDoc
+
+http://localhost:8000/redoc
+
+## Coleção Postman
+
+Arquivo:
+
+Raizes_do_Nordeste_Postman_Collection.json
+
+## Documentação Técnica
+
+Arquivo:
+
+Documentacao_Projeto_Back_End.md
+
+## DER
+
+O DER encontra-se na documentação técnica do projeto.
