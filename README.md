@@ -37,11 +37,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 3. Instale as bibliotecas necessárias:
    ```bash
-   pip install -r requirements.txt
-   ```
-   *Caso o arquivo requirements.txt não esteja disponível, as dependências principais são:*
-   ```bash
-   pip install fastapi uvicorn sqlalchemy pydantic email-validator bcrypt python-jose[cryptography]
+   pip install fastapi uvicorn sqlalchemy pydantic email-validator bcrypt python-jose[cryptography] requests
    ```
 
 ## 6. Como iniciar a API
