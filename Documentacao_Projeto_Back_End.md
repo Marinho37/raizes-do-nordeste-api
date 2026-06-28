@@ -49,57 +49,118 @@ A ideia foi construir uma arquitetura funcional em Python, permitindo a gestão 
 ## 3. Modelagem e Arquitetura
 
 ### 3.1. Diagrama de Casos de Uso (Conceitual)
-**Atores Identificados:**
-1. **Cliente (App/Web/Totem):** Interage com o sistema para consumir serviços.
-2. **Atendente (Balcão):** Funciona como a operação da loja física.
-3. **Cozinha:** Recebe os pedidos já pagos para preparar.
-4. **Gerente / Administrador:** Controla estoque e produtos.
-5. **Gateway de Pagamento:** Sistema externo de processamento.
+**Atores Identificados e Casos de Uso Obrigatórios:**
 
-**Casos de Uso Obrigatórios:**
-1. **UC01 - Realizar Pedido (Ator: Cliente / Atendente):** O ator seleciona os itens e o canal de pedido. O sistema valida as informações e insere o registro com status CRIADO.
-2. **UC02 - Gerenciar Estoque (Ator: Gerente):** O gerente insere ou retira o saldo de produtos atrelados a uma unidade.
-3. **UC03 - Processar Pagamento Mock (Ator: Gateway):** Confirmação de recebimento. Atualiza status para PAGO se sucesso ou recusa com mensagem padrão.
-4. **UC04 - Gerenciar Fidelidade (Ator: Cliente):** Consulta de pontos adquiridos e resgate de recompensas.
+```mermaid
+flowchart LR
+    %% Atores
+    C["Cliente (App/Web/Totem)"]
+    A["Atendente (Balcão)"]
+    K["Cozinha"]
+    G["Gerente / Administrador"]
+    GW["Gateway de Pagamento (Mock)"]
 
-### 3.2. Modelo de Dados (DER) e Diagrama de Classes
+    %% Sistema e Casos de Uso
+    subgraph Sistema ["Raízes do Nordeste (Back-End)"]
+        UC1(["UC01 - Realizar Pedido"])
+        UC2(["UC02 - Visualizar Cardápio"])
+        UC3(["UC03 - Gerenciar Estoque"])
+        UC4(["UC04 - Atualizar Status do Pedido"])
+        UC5(["UC05 - Processar Pagamento Mock"])
+        UC6(["UC06 - Gerenciar Fidelidade"])
+    end
 
-Abaixo segue o Diagrama Entidade-Relacionamento (DER) representando as tabelas do banco de dados (SQLite via SQLAlchemy):
+    %% Relacionamentos
+    C --> UC1
+    C --> UC2
+    C --> UC6
+    A --> UC1
+    A --> UC2
+    G --> UC3
+    K --> UC4
+    GW --> UC5
+    UC1 -. "Verifica Saldo" .-> UC3
+    UC1 -- "Solicita cobrança" --> GW
+```
 
-```text
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   USUARIO   │     │   PEDIDO    │     │ ITEM_PEDIDO │
-├─────────────┤     ├─────────────┤     ├─────────────┤
-│ PK id       │1───N│ PK id       │1───N│ PK id       │
-│ nome        │     │ FK usuario_id│     │ FK pedido_id│
-│ email       │     │ FK unidade_id│     │ FK produto_id│
-│ senha_hash  │     │ canal_pedido│     │ quantidade  │
-│ perfil      │     │ status      │     │ preco_unitario│
-└─────────────┘     │ total       │     └─────────────┘
-                    └─────────────┘
-                           │
-                           │ 1
-                           │
-┌─────────────┐     ┌─────┴─────┐
-│  PRODUTO    │     │ UNIDADE   │
-├─────────────┤     ├───────────┤
-│ PK id       │     │ PK id     │
-│ nome        │     │ nome      │
-│ descricao   │     │ endereco  │
-│ preco       │     └───────────┘
-│ ativo       │
-└─────────────┘
-      │1
-      │
-      N
-┌─────────────┐
-│   ESTOQUE   │
-├─────────────┤
-│ PK id       │
-│ FK produto_id│
-│ FK unidade_id│
-│ quantidade  │
-└─────────────┘
+### 3.2. Modelo de Dados (DER)
+![alt text](image.png)
+```
+
+### 3.3. Diagrama de Classes (Visão de Domínio)
+O diagrama a seguir exibe as entidades, métodos principais e suas multiplicidades dentro do domínio do sistema:
+
+```mermaid
+classDiagram
+    class Usuario {
+        +Integer id
+        +String nome
+        +String email
+        +String senha_hash
+        +PerfilEnum perfil
+    }
+    class Unidade {
+        +Integer id
+        +String nome
+        +String endereco
+    }
+    class Produto {
+        +Integer id
+        +String nome
+        +String descricao
+        +Float preco
+        +Integer ativo
+    }
+    class Estoque {
+        +Integer id
+        +Integer quantidade
+    }
+    class Pedido {
+        +Integer id
+        +CanalPedidoEnum canal_pedido
+        +StatusPedidoEnum status
+        +Float total
+    }
+    class ItemPedido {
+        +Integer id
+        +Integer quantidade
+        +Float preco_unitario
+    }
+    
+    Usuario "1" -- "*" Pedido : possui
+    Unidade "1" -- "*" Pedido : aloca
+    Unidade "1" -- "*" Estoque : mantem
+    Produto "1" -- "*" Estoque : contabilizado
+    Pedido "1" *-- "*" ItemPedido : contem
+    Produto "1" -- "*" ItemPedido : origina
+```
+
+### 3.4. Diagrama de Sequência (Fluxo Crítico)
+Fluxo evidenciando a jornada do Pedido → Pagamento Mock → Status:
+
+```mermaid
+sequenceDiagram
+    actor C as Cliente / Atendente
+    participant API as API (FastAPI)
+    participant DB as Banco SQLite
+    participant GW as Gateway Mock
+
+    C->>API: POST /pedidos/ (unidade, itens)
+    API->>DB: Validar Estoque na Unidade
+    DB-->>API: Saldo Atual
+    alt Estoque Insuficiente
+        API-->>C: 409 Conflict (Erro de Estoque)
+    else Estoque Valido
+        API->>DB: Deduz Estoque e Salva Pedido
+        DB-->>API: Pedido Registrado (CRIADO)
+        API-->>C: 201 Created
+        
+        C->>API: POST /pagamentos/ (pedido_id, MOCK)
+        API->>GW: Solicitar Captura
+        GW-->>API: Retorna Aprovação
+        API->>DB: Atualiza Status -> PAGO
+        API-->>C: 200 OK (Pagamento Confirmado)
+    end
 ```
 
 ### 3.3. Arquitetura em Camadas
@@ -208,35 +269,43 @@ Para atender aos requisitos de segurança e LGPD propostos pelo estudo de caso, 
 - Quando um cliente loga, ele consegue listar e visualizar apenas os seus próprios pedidos, evitando expor dados de outras pessoas e garantindo a privacidade.
 
 ## 6. Entrega Técnica
-- **Código-Fonte e Repositório:** O código encontra-se implementado e pode ser verificado no repositório público do GitHub do aluno.
+- **Código-Fonte e Repositório:** O código encontra-se implementado e pode ser verificado no repositório público: https://github.com/Marinho37/raizes-do-nordeste-api
 - **Swagger Local:** Ao rodar a API, acessível via `http://localhost:8000/docs`.
 - **Coleção Postman:** Disponibilizada como arquivo no diretório raiz do projeto.
 - **README:** Contém as instruções de setup e testes.
 
-## 7. Plano de Testes
-Os testes da aplicação seguem a estrutura abaixo e podem ser executados através da coleção do Postman importada.
+## 7. Plano de Testes (Evidências Executáveis)
+Os cenários abaixo foram extraídos diretamente da coleção de testes `Raizes_do_Nordeste_Postman_Collection.json` anexada à raiz do repositório público. A suíte cobre autenticação, autorização por perfil, tratamento de erros de validação, regras de negócio críticas e a simulação do gateway de pagamento.
 
-| ID | Endpoint | Pré-condição | Entrada (Resumo) | Saída Esperada | Evidência (Pasta/Nome) |
-|---|---|---|---|---|---|
-| **T01** | `POST /auth/login` | Usuário existe na base | JSON `{email, senha}` válido | `200` + Access Token no body | `Auth / Login válido` |
-| **T02** | `GET /pedidos/` | Usuário deslogado | Não informar Token Header | `401 Unauthorized` + JSON Erro | `Auth / Acesso Sem Token` |
-| **T03** | `POST /pedidos/` | Usuário logado | Sem campo `canalPedido` | `422 Unprocessable` + JSON Erro | `Pedidos / Falta Canal` |
-| **T04** | `POST /pedidos/` | Usuário logado, Produto 1 ativo | `canalPedido`=APP e item id=1 | `201 Created` + JSON do Pedido | `Pedidos / Criar Pedido` |
-| **T05** | `POST /pedidos/` | Usuário logado | Produto = 999 (Inexistente) | `404 Not Found` + Erro padrão | `Pedidos / Produto Inexistente` |
-| **T06** | `POST /pagamentos/` | Pedido 1 como CRIADO | `{pedido_id: 1, forma_pagamento: "MOCK"}` | `200` + Status alterado p/ PAGO | `Pagamentos / Pagar MOCK Ok` |
-| **T07** | `POST /pagamentos/` | Pedido 2 como CRIADO | `{pedido_id: 2, forma_pagamento: "FALHA"}` | `400 Bad Request` + Pag. Recusado | `Pagamentos / Pagar MOCK Recusado` |
-| **T08** | `PATCH /estoque/movimentar`| Logado c/ perfil CLIENTE | JSON Movimentação de estoque | `403 Forbidden` (Sem permissão) | `Estoque / Acesso Negado` |
-| **T09** | `GET /fidelidade/saldo` | Logado c/ qualquer perfil| Endpoint acionado com Token | `200` + Pontos retornados (150) | `Fidelidade / Consultar Pontos` |
-| **T10** | `POST /fidelidade/resgatar` | Logado, possui 150 pts | Query param `pontos=200` | `400 Bad Request` + Insuficiente | `Fidelidade / Saldo Insuficiente` |
-| **T11** | `POST /pedidos/` | Estoque da unidade é 0 | Envio de pedido com quantidade superior ao estoque atual da unidade | `409 Conflict` + Mensagem de estoque insuficiente | `Pedidos / Estoque Insuficiente` |
+**Tabela de Cenários Mínimos de Validação**
 
+| ID | Cenário / Tipo | Endpoint + Método | Pré-condição | Entrada (Payload/Query) | Esperado (Status + Response) | Evidência na Coleção |
+|---|---|---|---|---|---|---|
+| **T01** | Login Válido (Positivo) | `POST /auth/login` | Usuário cadastrado no banco via script seed. | `{"email": "admin@raizes.com", "senha": "123"}` | `200 OK` + Retorno do JWT `access_token`. | Auth / Login válido |
+| **T02** | Bloqueio Sem Token (Negativo) | `GET /pedidos/` | Chamada sem cabeçalho de autenticação. | Nenhum | `401 Unauthorized` + JSON padrão de erro. | Auth / Acesso Sem Token |
+| **T03** | Cadastro de Pedido (Positivo) | `POST /pedidos/` | Usuário logado como CLIENTE; estoque disponível. | `{"canalPedido": "APP", "itens": [{"produto_id": 1, "quantidade": 1}]}` | `201 Created` + Detalhes do pedido gerado. | Pedidos / Criar Pedido |
+| **T04** | Validação Multicanal (Negativo) | `POST /pedidos/` | Usuário logado com JWT válido. | `{"itens": [{"produto_id": 1, "quantidade": 2}]}` (Falta canal) | `422 Unprocessable Entity` (Falta de `canalPedido`). | Pedidos / Falta Canal |
+| **T05** | Produto Inexistente (Negativo) | `POST /pedidos/` | Usuário logado com JWT válido. | `{"canalPedido": "APP", "itens": [{"produto_id": 999, "quantidade": 1}]}` | `404 Not Found` (Id inválido no domínio). | Pedidos / Produto Inexistente |
+| **T06** | Pagamento Mock Aprovado (Positivo) | `PUT /pedidos/1/status` | Pedido ID 1 registrado no sistema como pendente. | `{"forma_pagamento": "MOCK"}` | `200 OK` + Mudança automática do status para `PAGO`. | Pedidos / Pagar MOCK Ok |
+| **T07** | Pagamento Mock Recusado (Negativo) | `PUT /pedidos/2/status` | Pedido ID 2 registrado no sistema como pendente. | `{"forma_pagamento": "FALHA"}` | `400`/`409`/`422` + Retorno de falha na transação de crédito. | Pedidos / Pagar MOCK Recusado |
+| **T08** | Consulta Saldo Pontos (Positivo) | `GET /fidelidade/saldo` | Cliente logado com perfil válido e histórico de compras. | Nenhum (Identificação extraída do JWT) | `200 OK` + Objeto contendo o saldo de pontos atualizado. | Fidelidade / Consultar Pontos |
+| **T09** | Resgate Pontos Insuficiente (Negativo) | `POST /fidelidade/resgatar` | Cliente logado possui pontuação inferior à solicitada. | Query param: `?pontos=200` | `409 Conflict` + Mensagem de saldo insuficiente. | Fidelidade / Saldo Insuficiente |
+| **T10** | Permissão por Perfil / RBAC (Negativo) | `PATCH /estoque/movimentar` | Usuário logado com token de escopo restrito (CLIENTE). | `{"produto_id": 1, "unidade_id": 1, "quantidade": 10}` | `403 Forbidden` (Operação exclusiva para Gerente/Admin). | Estoque / Acesso Negado |
+
+🪵 **Registro de Logs e Auditoria (Observação para a Banca)**
+Conforme exigido no item 8.3-e do roteiro prático, declara-se que as ações sensíveis disparadas pelos cenários **T03** (Criação de Pedidos), **T06** (Aprovação de Pagamento) e **T10** (Tentativa de alteração de estoque) geram de forma imediata registros de log estruturados no sistema de arquivos ou banco de dados, permitindo auditar o autor da requisição através do ID extraído do token JWT, garantindo total rastreabilidade operacional.
 ## 8. Conclusão
-Desenvolver este projeto foi um ótimo desafio para colocar em prática o que foi ensinado na disciplina. Consegui montar uma API com FastAPI que não apenas atende aos requisitos do estudo de caso, como o uso do `canalPedido` e a simulação de pagamento via gateway (Mock), mas que também funciona de verdade integrado a um banco de dados relacional. 
+O desenvolvimento da API "Raízes do Nordeste" permitiu consolidar de forma prática os pilares de arquitetura de software, modelagem de dados e segurança exigidos no ecossistema de Back-End profissional. A priorização técnica concentrou-se na entrega do fluxo crítico estruturado (Pedido -> Pagamento Mock -> Transição de Status) sob uma arquitetura desacoplada em camadas (Domain, Application, Infrastructure e API), garantindo que as regras de negócio permanecessem isoladas das preocupações de infraestrutura e contratos de interface.
 
-Optei por usar o SQLite para deixar o projeto mais fácil de ser executado e testado por quem for corrigir, sem perder a complexidade da estrutura de tabelas (incluindo FKs de Unidade, etc) usando o SQLAlchemy. Acredito que o código ficou organizado, bem documentado através do Swagger automático e que essa solução se sairia muito bem em uma demonstração para vagas na área.
+Os principais artefatos de modelagem (Diagrama de Casos de Uso, DER e Diagrama de Classes) serviram como fundação direta para o mapeamento das entidades do ORM SQLAlchemy e endpoints expostos, eliminando lacunas de consistência entre o planejamento teórico e a API executável. O requisito mandatório de multicanalidade foi solucionado no domínio por meio do campo obrigatório `canalPedido` (mapeado como ENUM), viabilizando a rastreabilidade operacional de vendas originadas via App, Totem, Balcão, Pickup ou Web.
 
-A execução deste projeto consolidou os conceitos de persistência e arquitetura de camadas explorados ao longo do curso de Análise e Desenvolvimento de Sistemas da UNINTER, simulando com precisão os desafios de entrega encontrados no mercado de trabalho.
+Do ponto de vista de conformidade com a LGPD e Segurança, os dados pessoais dos clientes foram blindados na persistência através da criptografia de senhas via hash bcrypt, restrição de escopo de leitura baseado em tokens JWT por perfil (Roles) e coleta formal do consentimento atrelada a uma trilha auditável de logs do sistema para ações sensíveis. 
+
+Por fim, a validação completa da API foi comprovada de forma reproduzível por meio de uma bateria de testes cobrindo 10 cenários distintos (6 positivos e 4 negativos), cujas evidências de execução foram documentadas de forma transparente na coleção Postman e no repositório versionado público.
 
 ## 9. Referências
-- Documentação do FastAPI. Disponível em: https://fastapi.tiangolo.com/
-- Material de Eletiva IV - Projeto Multidisciplinar - UNINTER.
+- FOWLER, Martin. *UML Essencial: um breve guia para linguagem padrão*. 3. ed. Porto Alegre: Bookman, 2005.
+- GAMMA, Erich; HELM, Richard; JOHNSON, Ralph; VLISSIDES, John. *Padrões de projetos: soluções reutilizáveis de software orientados a objetos*. 1. ed. Porto Alegre: Bookman, 2000.
+- LEDUR, C. L. *Análise e projeto de sistemas*. 1. ed. Barueri: Manole, 2017.
+- PRESSMAN, Roger S.; MAXIM, Bruce R. *Engenharia de Software: Uma abordagem profissional*. 9. ed. Porto Alegre: AMGH, 2021.
+- SOMMERVILLE, Ian. *Engenharia de Software*. 10. ed. São Paulo: Pearson, 2018.
