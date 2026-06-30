@@ -42,7 +42,8 @@ Durante o levantamento de requisitos, foram identificadas as principais necessid
 ## 3. Modelagem e 4. DER (Diagrama de Entidade-Relacionamento)
 
 A modelagem de dados foi desenhada para a estrutura relacional do SQLite, com as chaves estrangeiras devidamente mapeadas visando manter a integridade referencial.
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/b0ab05c2-b12b-4ad1-ada7-f5a7feb0459c" />
+<img width="1536" height="1024" alt="diagramaentidade" src="https://github.com/user-attachments/assets/4adc3305-08d5-4f11-adc5-d990b15917f6" />
+
 
 >
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/65f8146a-eec0-4a43-9065-fadf26a29f95" />
