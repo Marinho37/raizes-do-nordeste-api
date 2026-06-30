@@ -72,3 +72,19 @@ class ItemPedido(Base):
     quantidade = Column(Integer)
     preco_unitario = Column(Float)
     pedido = relationship("Pedido", back_populates="itens")
+
+class Pagamento(Base):
+    __tablename__ = "pagamentos"
+    id = Column(Integer, primary_key=True, index=True)
+    pedido_id = Column(Integer, ForeignKey("pedidos.id"))
+    status = Column(String)
+    forma_pagamento = Column(String)
+    txid = Column(String, nullable=True)
+    pedido = relationship("Pedido")
+
+class Fidelidade(Base):
+    __tablename__ = "fidelidade"
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    pontos = Column(Integer, default=0)
+    usuario = relationship("Usuario")

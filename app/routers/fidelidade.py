@@ -8,17 +8,27 @@ router = APIRouter(prefix="/fidelidade", tags=["Fidelidade"])
 
 @router.get("/saldo")
 def obter_saldo(db: Session = Depends(database.get_db), current_user: models.Usuario = Depends(auth.get_current_user)):
-    # Mocking saldo
-    return {"usuario_id": current_user.id, "saldo_pontos": 150}
+    fidelidade = db.query(models.Fidelidade).filter(models.Fidelidade.usuario_id == current_user.id).first()
+    saldo = fidelidade.pontos if fidelidade else 0
+    return {"usuario_id": current_user.id, "saldo_pontos": saldo}
 
 @router.post("/registrar")
 def registrar_pontos(pontos: int, db: Session = Depends(database.get_db), current_user: models.Usuario = Depends(auth.get_current_user)):
+    fidelidade = db.query(models.Fidelidade).filter(models.Fidelidade.usuario_id == current_user.id).first()
+    if not fidelidade:
+        fidelidade = models.Fidelidade(usuario_id=current_user.id, pontos=0)
+        db.add(fidelidade)
+    fidelidade.pontos += pontos
+    db.commit()
     logger.info(f"Usuário {current_user.id} REGISTROU {pontos} pontos de fidelidade.")
-    return {"detail": "Pontos registrados com sucesso.", "saldo_total": 150 + pontos}
+    return {"detail": "Pontos registrados com sucesso.", "saldo_total": fidelidade.pontos}
 
 @router.post("/resgatar")
 def resgatar_pontos(pontos: int, db: Session = Depends(database.get_db), current_user: models.Usuario = Depends(auth.get_current_user)):
-    if pontos > 150:
+    fidelidade = db.query(models.Fidelidade).filter(models.Fidelidade.usuario_id == current_user.id).first()
+    if not fidelidade or fidelidade.pontos < pontos:
         raise HTTPException(status_code=400, detail="Saldo insuficiente.")
+    fidelidade.pontos -= pontos
+    db.commit()
     logger.info(f"Usuário {current_user.id} RESGATOU {pontos} pontos de fidelidade.")
-    return {"detail": "Pontos resgatados com sucesso.", "saldo_restante": 150 - pontos}
+    return {"detail": "Pontos resgatados com sucesso.", "saldo_restante": fidelidade.pontos}

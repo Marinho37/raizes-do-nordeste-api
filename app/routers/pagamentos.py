@@ -26,9 +26,22 @@ def processar_pagamento(
         
     if pagamento.forma_pagamento.upper() == "MOCK":
         pedido.status = models.StatusPedidoEnum.PAGO
+        
+        # Registra o pagamento no banco
+        novo_pag = models.Pagamento(pedido_id=pedido.id, status="APROVADO", forma_pagamento="MOCK", txid="mock-1234")
+        db.add(novo_pag)
+        
+        # Acumula pontos de fidelidade (1 ponto por real gasto)
+        fidelidade = db.query(models.Fidelidade).filter(models.Fidelidade.usuario_id == pedido.usuario_id).first()
+        if not fidelidade:
+            fidelidade = models.Fidelidade(usuario_id=pedido.usuario_id, pontos=0)
+            db.add(fidelidade)
+        fidelidade.pontos += int(pedido.total)
+        
         db.commit()
         logger.info(f"Usuário {current_user.id} REALIZOU PAGAMENTO do pedido {pedido.id} (Mock Gateway).")
         return {"detail": "Pagamento simulado com sucesso via Gateway MOCK.", "novo_status": pedido.status}
     else:
+        # Registra tentativa falha se desejar, mas não altera status
         logger.info(f"Usuário {current_user.id} TENTOU pagar pedido {pedido.id} com forma inválida.")
         raise HTTPException(status_code=400, detail="Forma de pagamento inválida. Pagamento recusado.")

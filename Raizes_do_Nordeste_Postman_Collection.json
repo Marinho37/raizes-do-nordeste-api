@@ -6,111 +6,100 @@
 	},
 	"item": [
 		{
-			"name": "Auth",
-			"item": [
-				{
-					"name": "Auth / Login válido",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
-						"body": {"mode": "raw", "raw": "{\"email\":\"admin@raizes.com\",\"senha\":\"123456\"}"},
-						"url": {"raw": "http://localhost:8000/auth/login", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["auth", "login"]}
-					}
-				},
-				{
-					"name": "Auth / Acesso Sem Token",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
-					}
-				}
-			]
+			"name": "T01 - Auth / Login válido",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {"mode": "raw", "raw": "{\"email\":\"admin@raizes.com\",\"senha\":\"123456\"}"},
+				"url": {"raw": "http://localhost:8000/auth/login", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["auth", "login"]}
+			}
 		},
 		{
-			"name": "Pedidos",
-			"item": [
-				{
-					"name": "Pedidos / Falta Canal",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-						"body": {"mode": "raw", "raw": "{\"itens\":[{\"produto_id\":1,\"quantidade\":2}]}"},
-						"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
-					}
-				},
-				{
-					"name": "Pedidos / Criar Pedido",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-						"body": {"mode": "raw", "raw": "{\"canalPedido\":\"APP\",\"itens\":[{\"produto_id\":1,\"quantidade\":1}]}"},
-						"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
-					}
-				},
-				{
-					"name": "Pedidos / Produto Inexistente",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-						"body": {"mode": "raw", "raw": "{\"canalPedido\":\"APP\",\"itens\":[{\"produto_id\":999,\"quantidade\":1}]}"},
-						"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
-					}
-				},
-				{
-					"name": "Pedidos / Pagar MOCK Ok",
-					"request": {
-						"method": "PUT",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-						"body": {"mode": "raw", "raw": "{\"forma_pagamento\":\"MOCK\"}"},
-						"url": {"raw": "http://localhost:8000/pedidos/1/status", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", "1", "status"]}
-					}
-				},
-				{
-					"name": "Pedidos / Pagar MOCK Recusado",
-					"request": {
-						"method": "PUT",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
-						"body": {"mode": "raw", "raw": "{\"forma_pagamento\":\"FALHA\"}"},
-						"url": {"raw": "http://localhost:8000/pedidos/2/status", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", "2", "status"]}
-					}
-				}
-			]
+			"name": "T02 - Auth / Acesso Sem Token",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
+			}
 		},
 		{
-			"name": "Estoque",
-			"item": [
-				{
-					"name": "Estoque / Acesso Negado",
-					"request": {
-						"method": "PATCH",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token_cliente}}"}],
-						"body": {"mode": "raw", "raw": "{\"produto_id\":1,\"unidade_id\":1,\"quantidade\":10}"},
-						"url": {"raw": "http://localhost:8000/estoque/movimentar", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["estoque", "movimentar"]}
-					}
-				}
-			]
+			"name": "T03 - Pedidos / Falta Canal",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"unidade_id\":1,\"itens\":[{\"produto_id\":1,\"quantidade\":2}]}"},
+				"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
+			}
 		},
 		{
-			"name": "Fidelidade",
-			"item": [
-				{
-					"name": "Fidelidade / Consultar Pontos",
-					"request": {
-						"method": "GET",
-						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-						"url": {"raw": "http://localhost:8000/fidelidade/saldo", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["fidelidade", "saldo"]}
-					}
-				},
-				{
-					"name": "Fidelidade / Saldo Insuficiente",
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
-						"url": {"raw": "http://localhost:8000/fidelidade/resgatar?pontos=200", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["fidelidade", "resgatar"], "query": [{"key": "pontos", "value": "200"}]}
-					}
-				}
-			]
+			"name": "T04 - Pedidos / Criar Pedido",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"unidade_id\":1,\"canalPedido\":\"APP\",\"itens\":[{\"produto_id\":1,\"quantidade\":1}]}"},
+				"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
+			}
+		},
+		{
+			"name": "T05 - Pedidos / Produto Inexistente",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"unidade_id\":1,\"canalPedido\":\"APP\",\"itens\":[{\"produto_id\":999,\"quantidade\":1}]}"},
+				"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
+			}
+		},
+		{
+			"name": "T06 - Pagamentos / Pagar MOCK Ok",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"pedido_id\":1,\"forma_pagamento\":\"MOCK\"}"},
+				"url": {"raw": "http://localhost:8000/pagamentos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pagamentos", ""]}
+			}
+		},
+		{
+			"name": "T07 - Pagamentos / Pagar MOCK Recusado",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"pedido_id\":2,\"forma_pagamento\":\"FALHA\"}"},
+				"url": {"raw": "http://localhost:8000/pagamentos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pagamentos", ""]}
+			}
+		},
+		{
+			"name": "T08 - Estoque / Acesso Negado",
+			"request": {
+				"method": "PATCH",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token_cliente}}"}],
+				"body": {"mode": "raw", "raw": "{\"produto_id\":1,\"unidade_id\":1,\"quantidade\":10}"},
+				"url": {"raw": "http://localhost:8000/estoque/movimentar", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["estoque", "movimentar"]}
+			}
+		},
+		{
+			"name": "T09 - Fidelidade / Consultar Pontos",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+				"url": {"raw": "http://localhost:8000/fidelidade/saldo", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["fidelidade", "saldo"]}
+			}
+		},
+		{
+			"name": "T10 - Fidelidade / Saldo Insuficiente",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+				"url": {"raw": "http://localhost:8000/fidelidade/resgatar?pontos=200", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["fidelidade", "resgatar"], "query": [{"key": "pontos", "value": "200"}]}
+			}
+		},
+		{
+			"name": "T11 - Pedidos / Estoque Insuficiente",
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+				"body": {"mode": "raw", "raw": "{\"unidade_id\":1,\"canalPedido\":\"APP\",\"itens\":[{\"produto_id\":1,\"quantidade\":9999}]}"},
+				"url": {"raw": "http://localhost:8000/pedidos/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["pedidos", ""]}
+			}
 		}
 	]
 }
