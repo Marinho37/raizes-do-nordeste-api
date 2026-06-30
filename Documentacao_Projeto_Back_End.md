@@ -61,9 +61,6 @@ As interações sistêmicas foram mapeadas para garantir que as rotas respeitass
 
 
 
-```
-
----
 
 ## 6. Arquitetura do Sistema
 
