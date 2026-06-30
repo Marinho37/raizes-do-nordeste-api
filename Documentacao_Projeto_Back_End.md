@@ -33,110 +33,30 @@ Durante o levantamento de requisitos, foram identificadas as principais necessid
 * **RNF02 (Segurança):** A autenticação deve utilizar tokens JWT (JSON Web Token) e as senhas devem ser salvas criptografadas (Hash Bcrypt).
 * **RNF03 (Arquitetura):** O código deve seguir princípios de modularização e separação de responsabilidades (Rotas, Modelos e Schemas).
 * **RNF04 (Documentação):** A API deve prover documentação viva via Swagger/OpenAPI.
+*
+
+* 
 
 ---
 
 ## 3. Modelagem e 4. DER (Diagrama de Entidade-Relacionamento)
 
 A modelagem de dados foi desenhada para a estrutura relacional do SQLite, com as chaves estrangeiras devidamente mapeadas visando manter a integridade referencial.
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/a4154bb3-60e3-49cd-8b1b-42cf69e49445" />
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/dcf461d5-bd99-4a5e-8e85-6ca2b1c74205" />
 
-```mermaid
-erDiagram
-    USUARIO {
-        int id PK
-        string nome
-        string email
-        string senha_hash
-        string perfil
-    }
-    UNIDADE {
-        int id PK
-        string nome
-        string endereco
-    }
-    PRODUTO {
-        int id PK
-        string nome
-        string descricao
-        float preco
-    }
-    ESTOQUE {
-        int id PK
-        int quantidade
-        int produto_id FK
-        int unidade_id FK
-    }
-    PEDIDO {
-        int id PK
-        float valor_total
-        string status
-        string canalPedido
-        int usuario_id FK
-        int unidade_id FK
-    }
-    ITEM_PEDIDO {
-        int id PK
-        int quantidade
-        float preco_unitario
-        int pedido_id FK
-        int produto_id FK
-    }
-    PAGAMENTO {
-        int id PK
-        string status
-        string forma_pagamento
-        string txid
-        int pedido_id FK
-    }
-    FIDELIDADE {
-        int id PK
-        int pontos
-        int usuario_id FK
-    }
 
-    USUARIO ||--o{ PEDIDO : realiza
-    USUARIO ||--o| FIDELIDADE : possui
-    UNIDADE ||--o{ ESTOQUE : armazena
-    UNIDADE ||--o{ PEDIDO : atende
-    PRODUTO ||--o{ ESTOQUE : possui_em
-    PRODUTO ||--o{ ITEM_PEDIDO : listado_como
-    PEDIDO ||--|{ ITEM_PEDIDO : contem
-    PEDIDO ||--o| PAGAMENTO : gerado_por
-```
+
 
 ---
 
 ## 5. Casos de Uso
 
 As interações sistêmicas foram mapeadas para garantir que as rotas respeitassem o fluxo operacional da tapiocaria:
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/212331b2-8465-4026-9480-51eee0e82d98" />
 
-```mermaid
-usecaseDiagram
-    actor Cliente
-    actor Atendente
-    actor Gerente
-    
-    package "Gestão de Restaurante" {
-        usecase "Realizar Cadastro/Login" as UC1
-        usecase "Consultar Cardápio" as UC2
-        usecase "Realizar Pedido" as UC3
-        usecase "Pagar Pedido" as UC4
-        usecase "Consultar Estoque" as UC5
-        usecase "Cadastrar Produto" as UC6
-    }
-    
-    Cliente --> UC1
-    Cliente --> UC2
-    Cliente --> UC3
-    Cliente --> UC4
-    
-    Atendente --> UC1
-    Atendente --> UC2
-    Atendente --> UC3
-    Atendente --> UC5
-    
-    Gerente --> UC6
-    Gerente --> UC5
+
+
 ```
 
 ---
